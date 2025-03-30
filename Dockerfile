@@ -17,5 +17,8 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 # Set working directory
 WORKDIR /app
 
+# Copy files into the image
+COPY . /app
+
 # Use bash shell for entry point
 ENTRYPOINT ["/bin/bash"]
