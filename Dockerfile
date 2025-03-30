@@ -1,24 +1,45 @@
-FROM amazonlinux:latest
+# Use a lightweight Alpine Linux base image
+FROM alpine:3.18
 
-# Install dependencies (logs redirected to /dev/null for background logging)
-RUN yum install -y unzip git > /dev/null 2>&1
+# Install necessary packages
+RUN apk add --no-cache \
+    curl \
+    unzip \
+    git \
+    python3 \
+    py3-pip \
+    openssh-client \
+    gnupg \
+    bash
 
-# Install Terraform (logs redirected to /dev/null for background logging)
-RUN curl -fsSL https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip -o terraform.zip \
-    && unzip terraform.zip -d /usr/local/bin/ > /dev/null 2>&1 \
-    && rm terraform.zip
+# Install AWS CLI v2
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
 
-# Install AWS CLI (logs redirected to /dev/null for background logging)
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip > /dev/null 2>&1 \
-    && ./aws/install > /dev/null 2>&1 \
-    && rm -rf awscliv2.zip aws/
+# Install Terraform
+ARG TERRAFORM_VERSION=1.5.7
+RUN curl -LO https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin && \
+    rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+    chmod +x /usr/local/bin/terraform
+
+# Install terraform-docs (optional)
+RUN curl -LO https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz && \
+    tar -xzf terraform-docs-v0.16.0-linux-amd64.tar.gz && \
+    chmod +x terraform-docs && \
+    mv terraform-docs /usr/local/bin/ && \
+    rm terraform-docs-v0.16.0-linux-amd64.tar.gz
+
+# Install tflint (optional)
+RUN curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+# Clean up
+RUN rm -rf /var/cache/apk/*
 
 # Set working directory
-WORKDIR /app
+WORKDIR /workspace
 
-# Copy files into the image
-COPY . /app
-
-# Use bash shell for entry point
-ENTRYPOINT ["/bin/bash"]
+# Default command
+CMD ["/bin/bash"]
