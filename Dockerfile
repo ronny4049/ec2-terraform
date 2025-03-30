@@ -1,7 +1,7 @@
 FROM amazonlinux:latest
 
 # Install dependencies
-RUN yum install -y unzip curl git
+RUN yum install -y unzip git
 
 # Install Terraform
 RUN curl -fsSL https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip -o terraform.zip \
