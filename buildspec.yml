@@ -1,0 +1,28 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_REGION: "ap-south-1"
+    ECR_REPO: "my-space"
+    ACCOUNT_ID: "863518432621"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Initializing pre-build phase..."
+      - export IMAGE_TAG="eks-$CODEBUILD_BUILD_NUMBER"
+      - export IMAGE_URI="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG"
+      - echo "Logging into AWS ECR..."
+      - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com" || { echo "ECR login failed"; exit 1; }
+
+  build:
+    commands:
+      - echo "Starting Docker build..."
+      - docker build --no-cache -t "$ECR_REPO:$IMAGE_TAG" . || { echo "Docker build failed"; exit 1; }
+      - docker tag "$ECR_REPO:$IMAGE_TAG" "$IMAGE_URI" || { echo "Docker tag failed"; exit 1; }
+
+  post_build:
+    commands:
+      - echo "Pushing Docker Image to ECR..."
+      - docker push "$IMAGE_URI" || { echo "Docker push failed"; exit 1; }
+      - echo "Build Completed Successfully!"
