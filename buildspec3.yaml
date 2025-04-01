@@ -1,0 +1,52 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      # Install Terraform (if not using a custom Docker image)
+      - echo "==== INSTALL TERRAFORM ===="
+      - wget https://releases.hashicorp.com/terraform/1.0.0/terraform_1.0.0_linux_amd64.zip
+      - unzip terraform_1.0.0_linux_amd64.zip
+      - mv terraform /usr/local/bin/
+      - terraform --version
+
+  pre_build:
+    commands:
+      # Step 1: Branch Check (Like in Your Image)
+      - echo "==== CHECK BRANCH ===="
+      - echo "Current branch: $CODEBUILD_SOURCE_VERSION"
+      - export BRANCH_NAME=$(echo "$CODEBUILD_SOURCE_VERSION" | sed 's/refs\/heads\///')
+      - echo "Simplified branch name: $BRANCH_NAME"
+
+  build:
+    commands:
+      # Step 2: Terraform Init (Like in Your Image)
+      - echo "==== TERRAFORM INIT ===="
+      - cd config
+      - terraform init -input=false
+      - echo "Init completed"
+
+      # Step 3: Terraform Plan (Like in Your Image)
+      - echo "==== TERRAFORM PLAN ===="
+      - terraform plan -out=tfplan -input=false
+      - echo "Plan generated"
+
+      # Step 4: Conditional Apply (Like in Your Image)
+      - echo "==== CONDITIONAL APPLY ===="
+      - if [ "$BRANCH_NAME" = "master" ]; then
+          echo "Branch is master → Applying changes";
+          terraform apply -input=false -auto-approve tfplan;
+        else
+          echo "Branch is NOT master → Skipping apply";
+        fi
+
+  post_build:
+    commands:
+      # Final status
+      - echo "==== PIPELINE FINISHED ===="
+      - echo "Terraform workflow completed for branch: $BRANCH_NAME"
+
+cache:
+  paths:
+    - '/root/.terraform.d/plugin-cache/**/*'
+    - 'config/.terraform/**/*'
