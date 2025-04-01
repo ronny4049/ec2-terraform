@@ -1,0 +1,32 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_REGION: "ap-south-1"
+    ACCOUNT_ID: "863518432621"
+    ECR_REPO: "my-space"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging into AWS ECR..."
+      - aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+      - echo "Fetching latest ECR image..."
+      - export IMAGE_TAG="eks-22"
+      - export IMAGE_URI="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG"
+
+      - echo "Pulling Docker image..."
+      - docker pull "$IMAGE_URI"
+
+  build:
+    commands:
+      - echo "Setting up Terraform..."
+      - terraform init
+
+      - echo "Applying Terraform configuration..."
+      - terraform apply -auto-approve
+
+  post_build:
+    commands:
+      - echo "Infrastructure deployed successfully!"
