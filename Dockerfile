@@ -8,17 +8,18 @@ RUN apk add --no-cache \
     wget
 
 # Install Terraform
-ARG TERRAFORM_VERSION
+ARG TERRAFORM_VERSION=1.11.1
 RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin && \
-    mv terraform /usr/local/bin/ && \
-    rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+    rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+    
 
 
 # Clean up
 RUN rm -rf /var/cache/apk/*
 
 # Set working directory
+RUN mkdir -p /terraform
 WORKDIR /terraform
 
 # Default command
